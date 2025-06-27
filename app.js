@@ -1,14 +1,54 @@
 const express = require('express');
 const path = require('path');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const userModel = require('./models/userModel');
+const swaggerJsdoc = require('swagger-jsdoc');
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpec = swaggerJsdoc(require('./swaggerConfig'));
+
 
 const app = express();
 
 app.use(express.json());
 app.use(express.urlencoded({extended : true}));
 app.use(express.static(path.join(__dirname,'public')));
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.set('view engine','ejs');
+
+app.get('/user/create' , (req,res)=>{
+    res.render('create');
+})
+app.get('/',(req,res)=>{
+    res.render('login');
+})
+
+app.get('/api-docs.json', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(swaggerSpec);
+});
+/**
+ * @swagger
+ * /user/create:
+ *   post:
+ *     summary: Create a new user
+ *     tags: [User]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/x-www-form-urlencoded:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: User successfully created
+ */
 
 app.post('/user/create',(req,res)=>{
     let{name,email,password} = req.body;
@@ -25,7 +65,7 @@ app.post('/user/create',(req,res)=>{
     redirectUrl: '/login'
 });
  });
-         })
+    })
  })
 
 app.post('/login',(req,res)=>{
