@@ -40,5 +40,4 @@ jobs:
 
       - name: Run Keploy Test Suite
         run: |
-          export KEPLOY_API_KEY=${{ secrets.KEPLOY_API_KEY }}
-          keploy test-suite --app=YOUR_APP_ID --base-path=http://localhost:3000 --cloud
+        export KEPLOY_API_KEY=pt1uGJzA8CCOMIs5Yw== && keploy test-suite --app=b9d7276a-8381-47c5-978c-696b3d15b7f8 --base-path http://localhost:3000/user/create --cloud
