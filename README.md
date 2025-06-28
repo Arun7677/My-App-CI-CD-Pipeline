@@ -1,276 +1,144 @@
-**# Express User Management API
+# API Testing and CI/CD Pipeline with Swagger & Keploy
 
-A complete user management system built with Express.js, MongoDB, and EJS templating engine.
+This project demonstrates how to set up an end-to-end Express.js-based User Management System, enhanced with AI-based API testing using **Keploy**, automated using **GitHub Actions**, and documented using **Swagger (OpenAPI)**.
 
-## 📦 Required Packages
+---
 
-Install the following packages before running the application:
+## 🖊️ API Documentation with Swagger (OpenAPI)
+
+We documented our Express APIs using the **OpenAPI Specification** via Swagger. This helps:
+
+* Define routes, methods, and models in a standardized format
+* Allow auto-generation of API test cases
+* Integrate better with testing tools like Keploy
+
+### How Swagger/OpenAPI Was Set Up:
+
+1. Created an OpenAPI YAML/JSON schema for all Express routes
+2. Defined methods, request body schemas, and responses
+3. Uploaded schema to the [Keploy Dashboard](https://app.keploy.io) for test generation
+
+> Example of a documented route:
+
+```yaml
+paths:
+  /user/create:
+    post:
+      summary: Create a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        '200':
+          description: User created successfully
+```
+
+---
+
+## 🧪 AI-Powered API Testing with Keploy
+
+Once the OpenAPI schema and `curl` commands were prepared, we used **Keploy** to test the APIs locally.
+
+### Keploy Setup:
+
+1. Downloaded and extracted the Keploy Agent:
 
 ```bash
-npm install express ejs bcrypt mongoose path
+tar -xvf keploy-agent-windows-amd64.zip
 ```
 
-### Package Details:
-- **express**: Web framework for Node.js
-- **ejs**: Embedded JavaScript templating engine
-- **bcrypt**: Password hashing library
-- **mongoose**: MongoDB object modeling tool
-- **path**: Node.js built-in module for file paths
+2. Ran the agent:
 
-## 🚀 Getting Started
-
-1. Install dependencies:
 ```bash
-npm install
+./keploy-agent.exe
 ```
 
-2. Make sure MongoDB is running on your system
+### Test Generation:
 
-3. Create a `models/userModel.js` file with your user schema
+* The agent began recording API calls & responses (visible in terminal logs)
+* Uploaded test suite to the Keploy dashboard
+* Generated test cases automatically based on captured inputs and responses
 
-4. Create a `views` folder and place the `login.ejs` file inside
+> **Screenshot: Running Keploy Agent**
 
-5. Create a `public` folder for static files
+![Keploy Agent CLI Screenshot](./Screenshot%202025-06-27%20235250.png)
 
-6. Start the server:
-```bash
-node app.js
+---
+
+## 📈 CI/CD Pipeline Integration using GitHub Actions
+
+### Goal: Automate API Testing on Every Push
+
+We integrated Keploy API Testing into our CI/CD pipeline using GitHub Actions.
+
+### Steps Followed:
+
+1. Created `.github/workflows/ci.yml`
+2. Installed dependencies, launched the app, and started Keploy tests
+3. Workflow was triggered on `push` events
+
+> Sample GitHub Action config (ci.yml):
+
+```yaml
+name: CI with Keploy API Testing
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  keploy-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18.x'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Start MongoDB
+        uses: supercharge/mongodb-github-action@1.8.0
+
+      - name: Run Keploy Tests
+        run: |
+          curl -sL https://get.keploy.io/install.sh | sh
+          nohup node app.js &
+          sleep 5
+          keploy test -c "curl http://localhost:3000/users" -r
 ```
 
-The server will run on `http://localhost:3000`
+### GitHub Actions Dashboard View:
 
-## 📝 API Endpoints
+![GitHub CI Status Screenshot](./Screenshot%202025-06-28%20002347.png)
 
-### 1. Create User
-**Endpoint**: `POST /user/create`  
-**Content-Type**: `application/json`
+> All jobs passed successfully, showing the test suite integration with Keploy.
 
-**Request Body**:
-```json
-{
-  "name": "John Doe",
-  "email": "john@example.com",
-  "password": "mypassword123"
-}
-```
+---
 
-**Success Response**:
-```json
-{
-  "success": true,
-  "message": "User successfully created!",
-  "redirectUrl": "/login"
-}
-```
+## 📄 Summary
 
-### 2. User Login
-**Endpoint**: `POST /login`  
-**Content-Type**: `application/json`
+| Feature           | Tool Used                    |
+| ----------------- | ---------------------------- |
+| API Documentation | Swagger / OpenAPI            |
+| API Testing       | Keploy CLI & Dashboard       |
+| CI/CD Pipeline    | GitHub Actions               |
+| Test Generation   | Automated via curl + OpenAPI |
 
-**Request Body**:
-```json
-{
-  "email": "john@example.com",
-  "password": "mypassword123"
-}
-```
+---
 
-**Success Response**:
-```json
-{
-  "success": true,
-  "message": "Successfully Logged In",
-  "redirectUrl": "/profile/:user"
-}
-```
+## 👀 GitHub Repo
 
-**Error Response**:
-```json
-{
-  "message": "No User Found!",
-  "redirectUrl": "/user/create"
-}
-```
+View the project and workflow config here:
+**[Authentication-Authorization-API GitHub Repository](https://github.com/Arun7677/Autentication-Authorization-API)**
 
-### 3. Update User
-**Endpoint**: `POST /user/update`  
-**Content-Type**: `application/json`
+---
 
-**Request Body**:
-```json
-{
-  "id": "60f1b2b3c4d5e6f7g8h9i0j1",
-  "name": "John Updated",
-  "email": "john.updated@example.com"
-}
-```
-
-**Success Response**:
-```json
-{
-  "success": true,
-  "message": "User updated successfully!",
-  "user": {
-    "_id": "60f1b2b3c4d5e6f7g8h9i0j1",
-    "name": "John Updated",
-    "email": "john.updated@example.com",
-    "password": "hashedpassword"
-  }
-}
-```
-
-### 4. Delete User
-**Endpoint**: `DELETE /user/delete/:id`  
-**URL Parameter**: User ID
-
-**Example**: `DELETE /user/delete/60f1b2b3c4d5e6f7g8h9i0j1`
-
-**Success Response**:
-```json
-{
-  "success": true,
-  "message": "User deleted successfully!"
-}
-```
-
-**Error Response**:
-```json
-{
-  "success": false,
-  "message": "User not found!"
-}
-```
-
-### 5. Get Single User
-**Endpoint**: `GET /user/:id`  
-**URL Parameter**: User ID
-
-**Example**: `GET /user/60f1b2b3c4d5e6f7g8h9i0j1`
-
-**Success Response**:
-```json
-{
-  "success": true,
-  "user": {
-    "_id": "60f1b2b3c4d5e6f7g8h9i0j1",
-    "name": "John Doe",
-    "email": "john@example.com",
-    "password": "hashedpassword"
-  }
-}
-```
-
-### 6. Get All Users
-**Endpoint**: `GET /users`  
-**Method**: GET
-
-**Success Response**:
-```json
-{
-  "success": true,
-  "users": [
-    {
-      "_id": "60f1b2b3c4d5e6f7g8h9i0j1",
-      "name": "John Doe",
-      "email": "john@example.com",
-      "password": "hashedpassword"
-    },
-    {
-      "_id": "60f1b2b3c4d5e6f7g8h9i0j2",
-      "name": "Jane Smith",
-      "email": "jane@example.com",
-      "password": "hashedpassword"
-    }
-  ]
-}
-```
-
-### 7. Login Page
-**Endpoint**: `GET /login`  
-**Method**: GET  
-**Response**: Renders the login page (`login.ejs`)
-
-## 🧪 Testing the API
-
-### Using cURL:
-
-**Create User**:
-```bash
-curl -X POST http://localhost:3000/user/create \
-  -H "Content-Type: application/json" \
-  -d '{"name":"Test User","email":"test@example.com","password":"testpass123"}'
-```
-
-**Login**:
-```bash
-curl -X POST http://localhost:3000/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"test@example.com","password":"testpass123"}'
-```
-
-**Update User**:
-```bash
-curl -X POST http://localhost:3000/user/update \
-  -H "Content-Type: application/json" \
-  -d '{"id":"USER_ID_HERE","name":"Updated Name","email":"updated@example.com"}'
-```
-
-**Delete User**:
-```bash
-curl -X DELETE http://localhost:3000/user/delete/USER_ID_HERE
-```
-
-**Get User**:
-```bash
-curl -X GET http://localhost:3000/user/USER_ID_HERE
-```
-
-**Get All Users**:
-```bash
-curl -X GET http://localhost:3000/users
-```
-
-### Using Postman:
-
-1. Set method to POST/GET/DELETE as required
-2. Set URL to the endpoint
-3. For POST requests, set Headers: `Content-Type: application/json`
-4. Add JSON body as shown in examples above
-
-## 📁 Project Structure
-
-```
-project/
-├── app.js              # Main application file
-├── models/
-│   └── userModel.js    # User schema (create this)
-├── views/
-│   └── login.ejs       # Login page template
-├── public/
-│   └── login.css       # Login page styles
-├── package.json        # Dependencies
-└── README.md          # This file
-```
-
-## 🗂️ Setup Project Structure
-
-Create the following folders and files:
-
-1. **Create views folder and add login.ejs**:
-```bash
-mkdir views
-# Add login.ejs file in views folder
-```
-
-2. **Create public folder and add login.css**:
-```bash
-mkdir public
-# Add login.css file in public folder
-```
-
-## 🔐 Security Features
-
-- **Password Hashing**: Uses bcrypt with salt rounds
-- **Input Validation**: Basic validation on required fields
-- **Error Handling**: Proper error responses for failed operations
-
+> ✅ All test cases passed, pipeline was successful, and the Keploy integration worked as expected.
